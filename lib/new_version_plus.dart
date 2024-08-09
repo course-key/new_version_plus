@@ -51,7 +51,7 @@ class VersionStatus {
     return false;
   }
 
-  //Public Contructor
+  //Public Constructor
   VersionStatus({
     required this.localVersion,
     required this.storeVersion,
@@ -95,7 +95,7 @@ class NewVersionPlus {
 
   /// An optional value that will force the plugin to always return [forceAppVersion]
   /// as the value of [storeVersion]. This can be useful to test the plugin's behavior
-  /// before publishng a new version.
+  /// before publishing a new version.
   final String? forceAppVersion;
 
   //Html original body request
@@ -118,8 +118,7 @@ class NewVersionPlus {
   }) async {
     final VersionStatus? versionStatus = await getVersionStatus();
 
-    if (versionStatus != null && versionStatus.canUpdate) {
-      // ignore: use_build_context_synchronously
+    if (context.mounted && versionStatus != null && versionStatus.canUpdate) {
       showUpdateDialog(
         context: context,
         versionStatus: versionStatus,
@@ -148,6 +147,7 @@ class NewVersionPlus {
   /// versioning pattern, so they can be properly compared with the store version.
   String _getCleanVersion(String version) =>
       RegExp(r'\d+\.\d+(\.\d+)?').stringMatch(version) ?? '0.0.0';
+
   //RegExp(r'\d+\.\d+(\.[a-z]+)?(\.([^"]|\\")*)?').stringMatch(version) ?? '0.0.0';
 
   /// iOS info is fetched by using the iTunes lookup API, which returns a
@@ -192,8 +192,7 @@ class NewVersionPlus {
     }
     // Supports 1.2.3 (most of the apps) and 1.2.prod.3 (e.g. Google Cloud)
     //final regexp = RegExp(r'\[\[\["(\d+\.\d+(\.[a-z]+)?\.\d+)"\]\]');
-    final regexp =
-        RegExp(r'\[\[\[\"(\d+\.\d+(\.[a-z]+)?(\.([^"]|\\")*)?)\"\]\]');
+    final regexp = RegExp(r'\[\[\["(\d+\.\d+(\.[a-z]+)?(\.([^"]|\\")*)?)"\]\]');
     final storeVersion = regexp.firstMatch(response.body)?.group(1);
 
     //Description
@@ -201,7 +200,7 @@ class NewVersionPlus {
 
     //Release
     final regexpRelease =
-        RegExp(r'\[(null,)\[(null,)\"((\.[a-z]+)?(([^"]|\\")*)?)\"\]\]');
+        RegExp(r'\[(null,)\[(null,)"((\.[a-z]+)?(([^"]|\\")*)?)"\]\]');
 
     final expRemoveSc = RegExp(r"\\u003c[A-Za-z]{1,10}\\u003e",
         multiLine: true, caseSensitive: true);
@@ -313,21 +312,20 @@ class NewVersionPlus {
     await showDialog(
       context: context,
       barrierDismissible: allowDismissal,
-      builder: (BuildContext context) {
-        return WillPopScope(
-            child: Platform.isAndroid
-                ? AlertDialog(
-                    title: dialogTitleWidget,
-                    content: dialogTextWidget,
-                    actions: actions,
-                  )
-                : CupertinoAlertDialog(
-                    title: dialogTitleWidget,
-                    content: dialogTextWidget,
-                    actions: actions,
-                  ),
-            onWillPop: () => Future.value(allowDismissal));
-      },
+      builder: (BuildContext context) => PopScope(
+        canPop: allowDismissal,
+        child: Platform.isAndroid
+            ? AlertDialog(
+                title: dialogTitleWidget,
+                content: dialogTextWidget,
+                actions: actions,
+              )
+            : CupertinoAlertDialog(
+                title: dialogTitleWidget,
+                content: dialogTextWidget,
+                actions: actions,
+              ),
+      ),
     );
   }
 
